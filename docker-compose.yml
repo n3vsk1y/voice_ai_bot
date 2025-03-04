@@ -1,0 +1,8 @@
+services:
+  bot:
+    build: .
+    environment:
+      - FFMPEG_PATH=/usr/bin/ffmpeg
+    env_file:
+      - .env
+    restart: unless-stopped
