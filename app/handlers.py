@@ -1,7 +1,10 @@
 import os
+
 from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.filters import CommandStart
+
+from pydub import AudioSegment
 
 router = Router()
 
@@ -18,10 +21,20 @@ async def voice_message(message: Message):
         file = await message.bot.get_file(voice.file_id)
 
         os.makedirs('temp', exist_ok=True)
-        save_path = os.path.join('temp', 'temp_voice.ogg')
-        await message.bot.download_file(file.file_path, save_path)
 
-        os.remove(save_path)
+        ogg_path = os.path.join('temp', 'temp_voice.ogg')
+        wav_path = os.path.join('temp', 'temp_voice.wav')
+
+        await message.bot.download_file(file.file_path, ogg_path)
+
+        audio = AudioSegment.from_file(ogg_path, format="ogg")
+        audio.export(wav_path, format="wav")
+
+        await message.answer(f"Расшифровка:")
+
+        # Удаляем временные файлы
+        os.remove(ogg_path)
+        os.remove(wav_path)
 
     except Exception as e:
         await message.answer("Ошибка при сохранении голосового сообщения")
