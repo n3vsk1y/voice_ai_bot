@@ -1,10 +1,13 @@
 import os
+import subprocess
 
 from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.filters import CommandStart
 
-from pydub import AudioSegment
+import openai
+
+from app.config import settings
 
 router = Router()
 
@@ -20,22 +23,41 @@ async def voice_message(message: Message):
     try:
         file = await message.bot.get_file(voice.file_id)
 
-        os.makedirs('temp', exist_ok=True)
+        os.makedirs("temp", exist_ok=True)
 
         ogg_path = os.path.join('temp', 'temp_voice.ogg')
         wav_path = os.path.join('temp', 'temp_voice.wav')
 
         await message.bot.download_file(file.file_path, ogg_path)
 
-        audio = AudioSegment.from_file(ogg_path, format="ogg")
-        audio.export(wav_path, format="wav")
+        try:
+            subprocess.run([
+                rf"{settings.FFMPEG_PATH}",
+                "-i",
+                ogg_path,
+                wav_path
+            ], check=True)
+            print("✅ SUCCESS CONVERT ✅")
+        except FileNotFoundError:
+            err = 'CHECK FFMPEG PATH'
+            print("⛔ CHECK FFMPEG PATH ⛔")
+        except subprocess.CalledProcessError as e:
+            err = e
+            print(f"⛔ CONVERT ERROR: {e}")
 
-        await message.answer(f"Расшифровка:")
+        try:
+            with open(wav_path, "rb") as audio_file:
+                response = openai.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio_file,
+                    response_format="text"
+                )
+        except Exception as e:
+            print(f"⛔ TRANSCRIPT ERROR: {e}")
 
-        # Удаляем временные файлы
         os.remove(ogg_path)
         os.remove(wav_path)
 
+        await message.answer(response)
     except Exception as e:
-        await message.answer("Ошибка при сохранении голосового сообщения")
-        print(f"Ошибка: {e}")
+        await message.answer(f"Ошибка: {e}")

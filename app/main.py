@@ -18,7 +18,7 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        print('✅ BOT STARTED ✅')
+        print("✅ BOT STARTED ✅")
         asyncio.run(main())
     except KeyboardInterrupt:
-        print('⛔ BOT STOPPED ⛔')
+        print("⛔ BOT STOPPED ⛔")
