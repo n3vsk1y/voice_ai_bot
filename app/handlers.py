@@ -62,17 +62,12 @@ async def voice_message(message: Message):
         await message.bot.download_file(file.file_path, ogg_path)
 
         try:
-            try:
-                result = subprocess.run(["which", "ffmpeg"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                print(f"✅✅ FFMPEG PATH: {result.stdout.strip()} ✅✅")
-            except Exception as e:
-                print(f"⛔ Ошибка при поиске ffmpeg: {e}")
             subprocess.run([
                 rf"{settings.FFMPEG_PATH}",
                 "-i",
                 ogg_path,
                 wav_path
-            ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            ], check=True)
             print("✅ SUCCESS CONVERT ✅")
         except FileNotFoundError:
             print("⛔ CHECK FFMPEG PATH ⛔")
