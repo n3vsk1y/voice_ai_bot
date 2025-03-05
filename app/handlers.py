@@ -2,13 +2,13 @@ import os
 import subprocess
 
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 from aiogram.filters import CommandStart
 
 import openai
 
 from app.config import settings
-from app.gpt import get_assistant_response
+from app.gpt import generate_speech, get_assistant_response
 
 router = Router()
 
@@ -20,7 +20,6 @@ async def on_start(message: Message):
 
 @router.message(F.text)
 async def text_message(message: Message):
-    """ Обработчик текстовых сообщений """
     user_text = message.text
 
     try:
@@ -29,10 +28,17 @@ async def text_message(message: Message):
             raise ValueError
 
         wait_message = await message.answer("⏳ Думаю...")
-        response_text = await get_assistant_response(user_text)
-        
+        text_response = await get_assistant_response(message.text)
+        audio_path = await generate_speech(text_response)
+
         await wait_message.delete()
-        await message.answer(response_text)
+        if audio_path:
+            voice_file = FSInputFile(audio_path)
+            await message.reply_voice(voice=voice_file)
+            os.remove(audio_path)
+        else:
+            await message.answer(text_response)
+
     except ValueError:
         print("⛔ EMPTY QUESTION ⛔")
     except Exception as e:
