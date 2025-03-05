@@ -49,6 +49,9 @@ async def text_message(message: Message):
 async def voice_message(message: Message):
     voice = message.voice
     try:
+        if not os.path.exists(settings.FFMPEG_PATH):
+            print(f"⛔ FFmpeg не найден по пути: {settings.FFMPEG_PATH}")
+            
         file = await message.bot.get_file(voice.file_id)
 
         os.makedirs("temp", exist_ok=True)
@@ -64,7 +67,7 @@ async def voice_message(message: Message):
                 "-i",
                 ogg_path,
                 wav_path
-            ], check=True)
+            ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             print("✅ SUCCESS CONVERT ✅")
         except FileNotFoundError:
             print("⛔ CHECK FFMPEG PATH ⛔")
