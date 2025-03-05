@@ -51,7 +51,7 @@ async def voice_message(message: Message):
     try:
         if not os.path.exists(settings.FFMPEG_PATH):
             print(f"⛔ FFmpeg не найден по пути: {settings.FFMPEG_PATH}")
-            
+
         file = await message.bot.get_file(voice.file_id)
 
         os.makedirs("temp", exist_ok=True)
@@ -62,6 +62,11 @@ async def voice_message(message: Message):
         await message.bot.download_file(file.file_path, ogg_path)
 
         try:
+            try:
+                result = subprocess.run(["which", "ffmpeg"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                print(f"✅✅ FFMPEG PATH: {result.stdout.strip()} ✅✅")
+            except Exception as e:
+                print(f"⛔ Ошибка при поиске ffmpeg: {e}")
             subprocess.run([
                 rf"{settings.FFMPEG_PATH}",
                 "-i",
