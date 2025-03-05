@@ -8,13 +8,35 @@ from aiogram.filters import CommandStart
 import openai
 
 from app.config import settings
+from app.gpt import get_assistant_response
 
 router = Router()
 
 
 @router.message(CommandStart())
 async def on_start(message: Message):
-    await message.answer("Привет! Отправь мне голосовое сообщение и я его расшифрую 😊")
+    await message.answer("Привет! Задай мне вопрос, на который я смогу ответить, или отправь голосовое сообщение и я его расшифрую 😊")
+
+
+@router.message(F.text)
+async def text_message(message: Message):
+    """ Обработчик текстовых сообщений """
+    user_text = message.text
+
+    try:
+        if not user_text.strip():
+            await message.answer("Пожалуйста, отправьте осмысленный вопрос")
+            raise ValueError
+
+        wait_message = await message.answer("⏳ Думаю...")
+        response_text = await get_assistant_response(user_text)
+        
+        await wait_message.delete()
+        await message.answer(response_text)
+    except ValueError:
+        print("⛔ EMPTY QUESTION ⛔")
+    except Exception as e:
+        print(f"⛔ GPT ERROR: {e}")
 
 
 @router.message(F.voice)
@@ -25,8 +47,8 @@ async def voice_message(message: Message):
 
         os.makedirs("temp", exist_ok=True)
 
-        ogg_path = os.path.join('temp', 'temp_voice.ogg')
-        wav_path = os.path.join('temp', 'temp_voice.wav')
+        ogg_path = os.path.join("temp", "temp_voice.ogg")
+        wav_path = os.path.join("temp", "temp_voice.wav")
 
         await message.bot.download_file(file.file_path, ogg_path)
 
@@ -39,10 +61,8 @@ async def voice_message(message: Message):
             ], check=True)
             print("✅ SUCCESS CONVERT ✅")
         except FileNotFoundError:
-            err = 'CHECK FFMPEG PATH'
             print("⛔ CHECK FFMPEG PATH ⛔")
         except subprocess.CalledProcessError as e:
-            err = e
             print(f"⛔ CONVERT ERROR: {e}")
 
         try:
@@ -60,4 +80,4 @@ async def voice_message(message: Message):
 
         await message.answer(response)
     except Exception as e:
-        await message.answer(f"Ошибка: {e}")
+        await message.answer(f"⛔ Ошибка: {e}")
