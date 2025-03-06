@@ -10,7 +10,7 @@ from aiogram.filters import CommandStart
 import openai
 
 from app.config import settings
-from app.gpt import generate_speech, get_assistant_response
+from app.assistant import generate_speech, get_assistant_response
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AI BOT")
@@ -53,20 +53,20 @@ async def voice_message(message: Message):
     except Exception as e:
         logger.error(f"⛔ TRANSCRIPTION ERROR: {e}")
         await wait_message.delete()
-        return await message.answer("⛔ Ошибка расшифровки аудио.")
+        return await message.answer("⛔ Ошибка расшифровки аудио")
 
     if not response.strip():
         logger.warning("⛔ EMPTY QUESTION ⛔")
         await wait_message.delete()
-        return await message.answer("⛔ Голосовое сообщение пустое.")
+        return await message.answer("⛔ Голосовое сообщение пустое")
 
     try:
-        text_response = await get_assistant_response(response)
-        audio_path = await generate_speech(text_response)
+        text_response = await get_assistant_response(message.from_user.id, response)
+        audio_path = await generate_speech(text_response, filename)
     except Exception as e:
         logger.error(f"⛔ GPT ERROR: {e}")
         await wait_message.delete()
-        return await message.answer("⛔ Ошибка обработки текста.")
+        return await message.answer("⛔ Ошибка обработки текста")
 
     await wait_message.delete()
 
